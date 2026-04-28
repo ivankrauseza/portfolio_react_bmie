@@ -3,10 +3,14 @@ FROM node:20
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+EXPOSE 3001
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+ENV HOST=0.0.0.0
+VOLUME ["/app/data"]
+
+CMD ["npm", "start"]
