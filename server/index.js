@@ -93,6 +93,7 @@ app.get('/api/rental/cars', (req, res) => {
           rental_cars.seats,
           rental_cars.doors,
           rental_cars.transmission,
+          rental_cars.radio_spec AS radioSpec,
           rental_cars.daily_rate_eur AS dailyRateEur,
           rental_locations.name AS locationName
         FROM rental_cars
@@ -214,6 +215,7 @@ app.post('/api/rental/bookings', async (req, res) => {
             seats,
             doors,
             transmission,
+            radio_spec AS radioSpec,
             daily_rate_eur AS dailyRateEur,
             location_id AS locationId
           FROM rental_cars

@@ -16,18 +16,31 @@ import {
   tripSearchToParams,
 } from '../lib/tripSession.js'
 
+const defaultFilters = {
+  driverAge: '30+',
+  transmission: '',
+  category: '',
+  doors: '',
+  order: 'lowest',
+}
+
+const carImageModules = import.meta.glob('../assets/cars/*.{png,jpg,jpeg,webp}', {
+  eager: true,
+  import: 'default',
+})
+const carImagesByKey = Object.fromEntries(
+  Object.entries(carImageModules).map(([path, source]) => [
+    path.split('/').pop().split('.').shift().toUpperCase(),
+    source,
+  ]),
+)
+
 function Cars() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [selectedCar, setSelectedCar] = useState(null)
   const [openFilter, setOpenFilter] = useState('')
-  const [filters, setFilters] = useState({
-    driverAge: '30+',
-    transmission: '',
-    category: '',
-    doors: '',
-    order: 'lowest',
-  })
+  const [filters, setFilters] = useState(defaultFilters)
   const [locations, setLocations] = useState([])
   const [cars, setCars] = useState([])
   const [error, setError] = useState('')
@@ -112,13 +125,17 @@ function Cars() {
           />
         </div>
 
-        <FilterBar
-          cars={cars}
-          filters={filters}
-          onChange={setFilters}
-          onOpen={setOpenFilter}
-          openFilter={openFilter}
-        />
+          <FilterBar
+            cars={cars}
+            filters={filters}
+            onChange={setFilters}
+            onClear={() => {
+              setFilters(defaultFilters)
+              setOpenFilter('')
+            }}
+            onOpen={setOpenFilter}
+            openFilter={openFilter}
+          />
 
         <div className="min-h-[520px] rounded-b-md bg-white px-6 py-10 shadow-md">
           {loading ? <p className="text-[#333333]">Loading cars...</p> : null}
@@ -249,15 +266,27 @@ function TripSummary({ dropoffLocation, pickupLocation, tripSearch }) {
   )
 }
 
-function FilterBar({ cars, filters, onChange, onOpen, openFilter }) {
+function FilterBar({ cars, filters, onChange, onClear, onOpen, openFilter }) {
   const categories = uniqueValues(cars.map((car) => car.category))
   const transmissions = uniqueValues(cars.map((car) => car.transmission))
   const doors = uniqueValues(cars.map((car) => String(car.doors)))
+  const hasActiveFilters = Object.entries(defaultFilters).some(
+    ([key, value]) => filters[key] !== value,
+  )
 
   return (
     <div className="grid min-h-20 rounded-t-md bg-[#cccccc] text-[#333333] shadow-md lg:grid-cols-[1.3fr_1fr_1fr_1fr_0.8fr_1.2fr]">
-      <div className="flex items-center px-7 text-sm font-bold uppercase">
-        Filter vehicles
+      <div className="flex items-center justify-between gap-4 px-7 text-sm font-bold uppercase">
+        <span>Filter vehicles</span>
+        {hasActiveFilters ? (
+          <button
+            className="rounded-md bg-white px-3 py-2 text-xs font-bold uppercase text-[#333333] transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500"
+            onClick={onClear}
+            type="button"
+          >
+            Clear filters
+          </button>
+        ) : null}
       </div>
       <FilterItem
         label="Driver age"
@@ -416,54 +445,32 @@ function uniqueValues(values) {
 function IncludedIconBar({ car }) {
   const items = [
     { label: car.transmission, svg: gearshiftIcon },
-    { label: 'Factory radio', svg: carRadioIcon },
+    { label: car.radioSpec ?? 'CD/MP3/Bluetooth', svg: carRadioIcon },
     { label: `${car.seats} seats`, svg: carSeatIcon },
     { label: `${car.doors} doors`, svg: carDoorIcon },
   ]
 
   return (
-    <div className="mt-5 grid grid-cols-4 border-t border-slate-200 pt-4 text-center text-xs font-bold uppercase text-[#333333]">
+    <div className="grid h-full grid-cols-4 border-t border-slate-200 text-center text-xs font-bold uppercase text-[#333333]">
       {items.map((item) => (
         <div
-          className="flex flex-col items-center justify-start border-l border-slate-200 text-center first:border-l-0"
+          className="flex h-full flex-col items-center justify-center border-l border-slate-200 px-3 py-4 text-center first:border-l-0"
           key={item.label}
         >
           {item.svg ? (
             <img
               alt=""
               aria-hidden="true"
-              className="mb-2 h-9 w-9 object-contain"
+              className="mb-3 h-10 w-10 object-contain"
               src={item.svg}
             />
           ) : (
-            <MaterialIcon className="mb-2 block text-4xl leading-none text-[#333333]">
+            <MaterialIcon className="mb-3 block text-4xl leading-none text-[#333333]">
               {item.icon}
             </MaterialIcon>
           )}
           <span>{item.label}</span>
         </div>
-      ))}
-    </div>
-  )
-}
-
-function SimilarStrip() {
-  const images = [
-    { label: 'Gear lever and steering wheel', variant: 'cockpit' },
-    { label: 'Radio dashboard', variant: 'radio' },
-    { label: 'Seat interior', variant: 'seat' },
-    { label: 'Rear exterior angle', variant: 'rear' },
-  ]
-
-  return (
-    <div className="mt-5 grid grid-cols-4 gap-3">
-      {images.map((image) => (
-        <CarPlaceholder
-          ariaLabel={image.label}
-          key={image.variant}
-          small
-          variant={image.variant}
-        />
       ))}
     </div>
   )
@@ -533,13 +540,16 @@ function CarDetailsModal({ car, onClose, onContinue }) {
         >
           <MaterialIcon className="text-5xl leading-none">close</MaterialIcon>
         </button>
-        <div className="px-12 py-8 text-center">
-          <h2 className="text-5xl font-bold uppercase tracking-normal text-[#333333]">
-            {car.name}
-          </h2>
-          <p className="mb-4 text-[#333333]">or similar</p>
-          <CarPlaceholder large />
-          <SimilarStrip />
+        <div className="grid min-h-[620px] grid-rows-[auto_1fr_25%] px-12 pt-8 text-center">
+          <div>
+            <h2 className="text-5xl font-bold uppercase tracking-normal text-[#333333]">
+              {car.name}
+            </h2>
+            <p className="text-[#333333]">or similar</p>
+          </div>
+          <div className="flex min-h-0 items-center justify-center py-4">
+            <CarPlaceholder carName={car.name} large />
+          </div>
           <IncludedIconBar car={car} />
         </div>
         <OfferDetails car={car} onContinue={onContinue} />
@@ -561,7 +571,7 @@ function CarCard({ car, onSelect }) {
         {car.name}
       </h2>
       <p className="mb-6 text-sm text-[#333333]">or similar</p>
-      <CarPlaceholder active={car.dailyRateEur <= 33} />
+      <CarPlaceholder active={car.dailyRateEur <= 33} carName={car.name} />
       <p className="mt-5 text-sm text-[#333333]">from</p>
       <p className="text-[#333333] group-hover:text-[#333333]">
         <span className="text-4xl font-bold">
@@ -576,13 +586,14 @@ function CarCard({ car, onSelect }) {
 function CarPlaceholder({
   active,
   ariaLabel = 'Car exterior side profile',
+  carName = '',
   large = false,
   small = false,
   variant = 'exterior',
 }) {
   const borderClass = active ? 'border-[#333333]' : 'border-slate-500'
   const sizeClass = large
-    ? 'aspect-[2/1] max-w-md'
+    ? 'h-full max-h-full max-w-full'
     : small
       ? 'aspect-[16/9] max-w-36'
       : 'aspect-[16/9] max-w-48'
@@ -593,18 +604,28 @@ function CarPlaceholder({
       className={`relative mx-auto w-full overflow-hidden bg-white ${variant === 'exterior' ? '' : `border ${borderClass}`} ${sizeClass}`}
       role="img"
     >
-      {variant === 'exterior' ? (
+      {['exterior', 'cockpit', 'radio', 'rear'].includes(variant) ? (
         <img
           alt=""
           aria-hidden="true"
-          className="h-full w-full object-contain"
-          src={carPrimaryPlaceholder}
+          className="h-full w-full object-cover"
+          src={getCarImageSource(carName)}
         />
       ) : (
         <CarLineArt variant={variant} />
       )}
     </div>
   )
+}
+
+function getCarImageSource(carName) {
+  return carImagesByKey[normalizeCarImageKey(carName)] ?? carPrimaryPlaceholder
+}
+
+function normalizeCarImageKey(value) {
+  return String(value ?? '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
 }
 
 function CarLineArt({ variant }) {

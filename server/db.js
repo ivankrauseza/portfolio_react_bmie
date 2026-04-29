@@ -51,6 +51,7 @@ db.exec(`
     seats INTEGER NOT NULL,
     doors INTEGER NOT NULL DEFAULT 4,
     transmission TEXT NOT NULL,
+    radio_spec TEXT NOT NULL DEFAULT 'CD/MP3/Bluetooth',
     daily_rate_eur INTEGER NOT NULL,
     location_id INTEGER NOT NULL,
     is_available INTEGER NOT NULL DEFAULT 1,
@@ -126,6 +127,12 @@ if (!rentalCarColumns.includes('doors')) {
   db.exec('ALTER TABLE rental_cars ADD COLUMN doors INTEGER NOT NULL DEFAULT 4')
 }
 
+if (!rentalCarColumns.includes('radio_spec')) {
+  db.exec(
+    "ALTER TABLE rental_cars ADD COLUMN radio_spec TEXT NOT NULL DEFAULT 'CD/MP3/Bluetooth'",
+  )
+}
+
 const seedSetting = db.prepare(`
   INSERT INTO app_settings (key, value)
   VALUES (@key, @value)
@@ -167,6 +174,7 @@ const seedCar = db.prepare(`
     seats,
     doors,
     transmission,
+    radio_spec,
     daily_rate_eur,
     location_id
   )
@@ -176,6 +184,7 @@ const seedCar = db.prepare(`
     @seats,
     @doors,
     @transmission,
+    @radio_spec,
     @daily_rate_eur,
     rental_locations.id
   FROM rental_locations
@@ -286,6 +295,7 @@ const seedRentalData = db.transaction(() => {
       seats: 4,
       doors: 2,
       transmission: 'Manual',
+      radio_spec: 'CD/MP3/Bluetooth',
       daily_rate_eur: 33,
     },
     {
@@ -294,6 +304,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Manual',
+      radio_spec: 'Bluetooth/USB/DAB',
       daily_rate_eur: 36,
     },
     {
@@ -302,6 +313,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Manual',
+      radio_spec: 'DAB/Bluetooth/USB-C',
       daily_rate_eur: 39,
     },
     {
@@ -310,6 +322,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Automatic',
+      radio_spec: 'Bluetooth/DAB/CarPlay',
       daily_rate_eur: 42,
     },
     {
@@ -318,6 +331,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Manual',
+      radio_spec: 'CD/MP3/AUX',
       daily_rate_eur: 45,
     },
     {
@@ -326,6 +340,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Automatic',
+      radio_spec: 'Bluetooth/USB/Android Auto',
       daily_rate_eur: 48,
     },
     {
@@ -334,6 +349,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Automatic',
+      radio_spec: 'DAB/Bluetooth/CarPlay',
       daily_rate_eur: 51,
     },
     {
@@ -342,6 +358,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Automatic',
+      radio_spec: 'Bluetooth/DAB/USB',
       daily_rate_eur: 86,
     },
     {
@@ -350,6 +367,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Automatic',
+      radio_spec: 'DAB/USB/SmartLink',
       daily_rate_eur: 74,
     },
     {
@@ -358,6 +376,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Manual',
+      radio_spec: 'Bluetooth/DAB/USB-C',
       daily_rate_eur: 66,
     },
     {
@@ -366,6 +385,7 @@ const seedRentalData = db.transaction(() => {
       seats: 8,
       doors: 4,
       transmission: 'Automatic',
+      radio_spec: 'Bluetooth/USB/DAB',
       daily_rate_eur: 129,
     },
     {
@@ -374,6 +394,7 @@ const seedRentalData = db.transaction(() => {
       seats: 5,
       doors: 4,
       transmission: 'Automatic',
+      radio_spec: 'DAB/Bluetooth/CarPlay',
       daily_rate_eur: 95,
     },
   ]
